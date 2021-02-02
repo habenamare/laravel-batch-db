@@ -1,0 +1,31 @@
+{
+    "name": "haben/laravel-batch-db",
+    "description": "Proper batch insert and update on Laravel",
+    "version": "0.1.0",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Haben Amare",
+            "email": "haben.amare@outlook.com"
+        }
+    ],
+    "autoload": {
+      "psr-4": {
+        "Haben\\": "src/"
+      }
+    },
+    "extra": {
+      "laravel": {
+          "providers": [
+              "Haben\\BatchDBServiceProvider"
+          ]
+      },
+      "aliases": {
+        "BatchDB": "Haben\\Facades\\BatchDB"
+    }
+    },
+    "require": {
+        "illuminate/support": "^8.25"
+    }
+}
