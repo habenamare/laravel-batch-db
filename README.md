@@ -1,3 +1,3 @@
-# laravel-batch-db-operation
+# laravel-batch-db :construction:
 
-Proper batch insert and update on Laravel
+**EARLY STAGE OF DEVELOPMENT**
