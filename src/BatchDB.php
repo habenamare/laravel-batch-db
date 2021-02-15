@@ -16,6 +16,18 @@ class BatchDB
         //
     }
 
+    public function insert($table, $rowsToBeInserted)
+    {
+        // Split $rowsToBeInserted into chunks
+        $rowsToBeInsertedChunks = $this->splitRowsToBeInsertedOrUpsertedIntoChunks($table, $rowsToBeInserted);
+
+        foreach ($rowsToBeInsertedChunks as $rowsToBeInsertedChunk) {
+            $this->temporaryDb->table($table)->insert($rowsToBeInsertedChunk);
+        }
+
+        return true;
+    }
+
     /**
      * Perform a batch upsert(insert or update) via `INSERT ... ON DUPLICATE KEY UPDATE`.
      *
@@ -36,7 +48,7 @@ class BatchDB
         }
 
         //== Upsert rows by splitting $rowsToBeUpserted into chunks
-        $rowsToBeUpsertedChunks = $this->splitRowsToBeUpsertedIntoChunks($table, $rowsToBeUpserted, $this->maxPlaceholdersCount);
+        $rowsToBeUpsertedChunks = $this->splitRowsToBeInsertedOrUpsertedIntoChunks($table, $rowsToBeUpserted, $this->maxPlaceholdersCount);
 
         foreach ($rowsToBeUpsertedChunks as $index => $rowsToBeUpsertedChunk) {
             $this->batchUpsertChunk($table, $rowsToBeUpsertedChunk, $dbConn);
@@ -57,7 +69,7 @@ class BatchDB
      * @return array Multi-dimensional numerically indexed array, with each dimension containing
      *               chunks of $rowsToBeUpserted
      */
-    private function splitRowsToBeUpsertedIntoChunks($tableName, $rowsToBeUpserted)
+    private function splitRowsToBeInsertedOrUpsertedIntoChunks($tableName, $rowsToBeUpserted)
     {
         // Get the given table's column count
         $columnNames = Schema::getColumnListing($tableName);
