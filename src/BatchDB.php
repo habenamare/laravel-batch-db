@@ -16,13 +16,26 @@ class BatchDB
         //
     }
 
-    public function insert($table, $rowsToBeInserted)
+    /**
+     * Perform a batch insert.
+     *
+     * @param string $table Name of table to perform upsert on
+     * @param array $rowsToBeInserted Array of rows to be inserted, each row must be an associative array
+     *                                where the 'key' is the column name and the 'value' is the column's value
+     *
+     * @return bool
+     */
+    public function insert(string $table, array $rowsToBeInserted, ConnectionInterface $dbConn = null)
     {
+        if ($dbConn == null) {
+            $dbConn = DB::connection(DB::getDefaultConnection());
+        }
+
         // Split $rowsToBeInserted into chunks
         $rowsToBeInsertedChunks = $this->splitRowsToBeInsertedOrUpsertedIntoChunks($table, $rowsToBeInserted);
 
         foreach ($rowsToBeInsertedChunks as $rowsToBeInsertedChunk) {
-            $this->temporaryDb->table($table)->insert($rowsToBeInsertedChunk);
+            $dbConn->table($table)->insert($rowsToBeInsertedChunk);
         }
 
         return true;
