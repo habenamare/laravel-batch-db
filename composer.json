@@ -26,6 +26,7 @@
     }
     },
     "require": {
-        "illuminate/support": "^8.25"
+        "illuminate/support": "^8.25",
+        "illuminate/database": "^8.25"
     }
 }
