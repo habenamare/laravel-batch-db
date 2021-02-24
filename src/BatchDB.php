@@ -12,9 +12,16 @@ class BatchDB
     // TODO: Get this value from configuration
     private $maxPlaceholdersCount = 16000;
 
-    public function __construct()
+    private ?ConnectionInterface $dbConn; 
+
+    public function __construct(string $dbConnectionName = '')
     {
-        //
+        $this->dbConn = $dbConnectionName ? DB::connection($dbConnectionName) : null;
+    }
+
+    public function connection(string $dbConnectionName)
+    {
+        return new BatchDB($dbConnectionName);
     }
 
     /**
@@ -29,7 +36,7 @@ class BatchDB
     public function insert(string $table, array $rowsToBeInserted, ConnectionInterface $dbConn = null)
     {
         if ($dbConn == null) {
-            $dbConn = DB::connection(DB::getDefaultConnection());
+            $dbConn = $this->dbConn ?? DB::connection(DB::getDefaultConnection());
         }
 
         // Split $rowsToBeInserted into chunks
@@ -45,7 +52,7 @@ class BatchDB
     public function insertAndGet(string $tableName, array $rowsToBeInserted, ConnectionInterface $dbConn = null)
     {
         if ($dbConn == null) {
-            $dbConn = DB::connection(DB::getDefaultConnection());
+            $dbConn = $this->dbConn ?? DB::connection(DB::getDefaultConnection());
         }
 
         if (count($rowsToBeInserted) === 0) {
@@ -116,7 +123,7 @@ class BatchDB
     public function upsert($table, $rowsToBeUpserted, ConnectionInterface $dbConn = null)
     {
         if ($dbConn == null) {
-            $dbConn = DB::getDefaultConnection();
+            $dbConn = $this->dbConn ?? DB::connection(DB::getDefaultConnection());
         }
 
         if (empty($rowsToBeUpserted)) {
