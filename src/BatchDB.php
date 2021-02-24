@@ -4,6 +4,7 @@ namespace Haben;
 
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class BatchDB
@@ -39,6 +40,68 @@ class BatchDB
         }
 
         return true;
+    }
+
+    public function insertAndGet(string $tableName, array $rowsToBeInserted, ConnectionInterface $dbConn = null)
+    {
+        if ($dbConn == null) {
+            $dbConn = DB::connection(DB::getDefaultConnection());
+        }
+
+        if (count($rowsToBeInserted) === 0) {
+            return [];
+        }
+
+        $insertedIdRanges = [];
+
+        //== Insert rows by splitting $rowsToBeInserted into chunks
+        $rowsToBeInsertedChunks = $this->splitRowsToBeInsertedOrUpsertedIntoChunks($tableName, $rowsToBeInserted);
+
+        foreach ($rowsToBeInsertedChunks as $index => $rowsToBeInsertedChunk) {
+            $dbConn->table($tableName)->insert($rowsToBeInsertedChunk);
+
+            //== Get last inserted id
+            //     - This actually gets the first automatically generated value successfully inserted for an
+            //       AUTO_INCREMENT column as a result of the most recently executed INSERT statement.
+            //       [Reference](https://dev.mysql.com/doc/refman/5.7/en/information-functions.html#function_last-insert-id)
+            $lastInsertedIdResult = $dbConn->select('SELECT LAST_INSERT_ID() AS last_inserted_id');
+            $firstInsertedId = json_decode(
+                json_encode($lastInsertedIdResult),
+                true,
+            )[0]['last_inserted_id'];
+            //==
+
+            //== Get id ranges of the inserted rows on the current chunk ($fromId & $toId)
+            $fromId = $firstInsertedId;
+            $toId = $firstInsertedId + (count($rowsToBeInsertedChunk) - 1);
+
+            Log::debug("batch insert chunk id range for {$tableName}: fromId = {$fromId}, toId = {$toId}");
+            //==
+
+            // Append current chunk's inserted ids to $insertedIdRanges
+            $insertedIdRanges[] = [$fromId, $toId];
+        }
+        //==
+
+        //== Fetch inserted rows
+        $insertedRowsQuery = $dbConn->table($tableName);
+
+        foreach ($insertedIdRanges as $insertedIdRange) {
+            $fromId = $insertedIdRange[0];
+            $toId = $insertedIdRange[1];
+
+            $insertedRowsQuery->orWhere(function ($query) use ($fromId, $toId) {
+                $query->where('id', '>=', $fromId)
+                    ->where('id', '<=', $toId);
+            });
+        }
+
+        $insertedRows = $insertedRowsQuery->get();
+        //==
+
+        // TODO: Throw error if count($insertedRows) !== count($rowsToBeInserted)
+
+        return $insertedRows;
     }
 
     /**
