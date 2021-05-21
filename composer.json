@@ -1,7 +1,7 @@
 {
     "name": "haben/laravel-batch-db",
     "description": "Proper batch insert and update on Laravel",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "type": "library",
     "license": "MIT",
     "authors": [

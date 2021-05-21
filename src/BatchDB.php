@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Schema;
 class BatchDB
 {
     // TODO: Get this value from configuration
-    private $maxPlaceholdersCount = 16000;
+    private $maxPlaceholdersCount = 65000;
 
     private ?ConnectionInterface $dbConn; 
 
